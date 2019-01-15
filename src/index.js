@@ -22,7 +22,7 @@ function parse(output = '', noAll = false) {
   const data = output.split(/\r?\n/);
   let section = 'header';
   if (data.length < 6 && !noAll) {
-  let msg = data[data.length - 2];
+    let msg = data[data.length - 2];
     if (!msg || msg.length <= 1) {
       msg = output;
     }
@@ -51,11 +51,9 @@ function parse(output = '', noAll = false) {
   });
   result.time =
     typeof data[data.length - 6] === 'string'
-      ? Number(
-          data[data.length - 6]
-            .replace(';; Query time: ', '')
-            .replace(' msec', ''),
-        )
+      ? Number(data[data.length - 6]
+        .replace(';; Query time: ', '')
+        .replace(' msec', ''))
       : '';
   result.server =
     typeof data[data.length - 6] === 'string'
@@ -75,10 +73,10 @@ function parse(output = '', noAll = false) {
 const dig = function dig(args = [], options = {}) {
   const raw = (options.raw === true) ? options.raw : args.includes('+short');
   const noAll = args.includes('+noall');
-    const digCMD = options.dig || 'dig';
-    return new Promise((resolve, reject) => {
-      const process = child.spawn(digCMD, args);
-      let shellOutput = '';
+  const digCMD = options.dig || 'dig';
+  return new Promise((resolve, reject) => {
+    const process = child.spawn(digCMD, args);
+    let shellOutput = '';
 
     process.stdout.on('data', (chunk) => {
       shellOutput += chunk;
