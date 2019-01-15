@@ -10,19 +10,19 @@ function parseSection(values, section) {
       type: values[3],
       ttl: values[1],
       class: values[2],
-      value: values[values.length - 1],
+      value: values.slice(4).join(' '),
     };
   }
   return values;
 }
 
-function parse(output = '') {
+function parse(output = '', noAll = false) {
   const regex = /(;; )([^\s]+)( SECTION:)/g;
   const result = {};
   const data = output.split(/\r?\n/);
   let section = 'header';
-  if (data.length < 6) {
-    let msg = data[data.length - 2];
+  if (data.length < 6 && !noAll) {
+  let msg = data[data.length - 2];
     if (!msg || msg.length <= 1) {
       msg = output;
     }
@@ -49,19 +49,36 @@ function parse(output = '') {
       }
     }
   });
-  result.time = Number(data[data.length - 6].replace(';; Query time: ', '').replace(' msec', ''));
-  result.server = data[data.length - 5].replace(';; SERVER: ', '');
-  result.datetime = data[data.length - 4].replace(';; WHEN: ', '');
-  result.size = Number(data[data.length - 3].replace(';; MSG SIZE  rcvd: ', ''));
+  result.time =
+    typeof data[data.length - 6] === 'string'
+      ? Number(
+          data[data.length - 6]
+            .replace(';; Query time: ', '')
+            .replace(' msec', ''),
+        )
+      : '';
+  result.server =
+    typeof data[data.length - 6] === 'string'
+      ? data[data.length - 5].replace(';; SERVER: ', '')
+      : '';
+  result.datetime =
+    typeof data[data.length - 6] === 'string'
+      ? data[data.length - 4].replace(';; WHEN: ', '')
+      : '';
+  result.size =
+    typeof data[data.length - 6] === 'string'
+      ? Number(data[data.length - 3].replace(';; MSG SIZE  rcvd: ', ''))
+      : '';
   return result;
 }
 
 const dig = function dig(args = [], options = {}) {
   const raw = (options.raw === true) ? options.raw : args.includes('+short');
-  const digCMD = options.dig || 'dig';
-  return new Promise((resolve, reject) => {
-    const process = child.spawn(digCMD, args);
-    let shellOutput = '';
+  const noAll = args.includes('+noall');
+    const digCMD = options.dig || 'dig';
+    return new Promise((resolve, reject) => {
+      const process = child.spawn(digCMD, args);
+      let shellOutput = '';
 
     process.stdout.on('data', (chunk) => {
       shellOutput += chunk;
@@ -74,7 +91,7 @@ const dig = function dig(args = [], options = {}) {
     process.stdout.on('end', () => {
       try {
         const result = (raw !== true) ?
-          parse(shellOutput) :
+          parse(shellOutput, noAll) :
           shellOutput.replace(/\n$/, '');
         resolve(result);
       } catch (err) {
